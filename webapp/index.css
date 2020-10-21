@@ -1,0 +1,13 @@
+body {
+    max-width: 70ch;
+    min-width: 2ch;
+    padding: 1.5rem;
+    margin: auto;
+    font-size: 2rem;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+input[type=text] {
+    margin: auto;
+    font-size: 1.1rem;
+}
