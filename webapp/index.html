@@ -2,125 +2,222 @@
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <![endif]-->
 <html>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Coin2Cash </title>
-    
-    <meta
-      name="description"
-      content="Trade fiat and cryptocurrencies in person"
-    />
+    <title></title>
+    <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="index.css" />
+
+    <link rel="stylesheet" href="libraries/leaflet.css" />
+    <script src="libraries/leaflet.js"></script>
+    <script src="libraries/jquery.min.js"></script>
     <script type="text/javascript" src="libraries/web3.min.js"></script>
 
     <script type="text/javascript" src="libraries/jquery.min.js"></script>
     <script type="text/javascript" src="common.js"></script>
   </head>
   <body>
-
-    
-    <h1>Coin2Cash
-     <br/> <i style="font-size: xx-small; opacity: 0.7; margin-left:0.3%;">The Web App</i></h1>
-    <form id="postForm">
-      <input
-        type="text"
-        name="title"
-        id="title"
-        placeholder="Title for your post"
-        maxlength="256"
-        required
-      />
-      <br />
-      <input
-        type="text"
-        name="description"
-        id="description"
-        placeholder="Description for your post"
-        maxlength="256"
-        required
-      />
-      <br />
-      <input type="radio" id="seller" value="seller" name="postType" required />
-      <label for="seller">Seller</label>
-      <input type="radio" id="buyer" value="buyer" name="postType" required />
-      <label for="buyer">Buyer</label>
-      <br />
-      <input type="submit" value="Post" />
-    </form>
-
-    <script type="text/javascript">
-      var web3js;
-      var userAccount;
-      var coin2cashContract;
-      var coords;
-      
-
-    
-      function handleSellerPost(title, description) {
-        try {
-          console.log(title);
-          coin2cashContract.methods
-          .addSeller(coords.latitude, coords.longitude, description, title, 0)
-          .send({ from: userAccount }, (err, res) => {
-            console.log(`${err} ${res} here`);
-          })
-        } catch(e) {
-          console.log(e);
-          alert("error posting your post");
-        }
-       
-      }
-
-
-      function handleBuyerPost(title, description) {
-        try {
-          coin2cashContract.methods
-          .addBuyer(97, 12, description, title, 0)
-          .send({ from: userAccount }, (err, res) => {
-            console.log(`${err} ${res} here`);
-          })
-        } catch(e) {
-          console.log(e);
-          alert("error posting your post");
-        }
-       
-      }
-
-      window.addEventListener("load", function () {
-        loadWeb3(async () => {
-          loadContract(() => {
-            getLocation((location) => {
-              console.log(location); //doesn't work on http connection requires https
-              coords = location.coords;
-            });
-          });
-        });
-        document.getElementById("postForm").onsubmit = (e) => {
-          e.preventDefault();
-          console.log(e);
-          var title = document.getElementById("title").value;
-          var description = document.getElementById("description").value;
-          if (document.getElementById("seller").checked) {
-            //seller post
-            handleSellerPost(title, description);
-          } else {
-            //buyer post
-            handleBuyerPost(title, description);
-          }
-        };
-      });
-    </script>
     <!--[if lt IE 7]>
       <p class="browsehappy">
         You are using an <strong>outdated</strong> browser. Please
         <a href="#">upgrade your browser</a> to improve your experience.
       </p>
     <![endif]-->
+    <h2>
+        Coin2Ca<span style="font-size: small">.</span>sh <br />
+        <i style="font-size: xx-small; opacity: 0.7; margin-left: 0.3%"
+          >The Web App</i
+        >
+      </h2>
+    <div id="contents">
+      <label
+        >Press One of the two buttons below to start loading buyers or
+        sellers</label
+      >
+      <br />
+      <div>
+        <button onclick="loadBuyers()">Load Buyers</button>
+        <button onclick="loadSellers()">Load Sellers</button>
+      </div>
+      <div class="alertMSG" id="showNumLoaded">
+          <div id="loadingBar"></div>
+    </div>
+    <div id="mapContainer">
+        <div id="mapid"></div>
+    </div>
+    </div>
+    <script>
+      var mymap;
 
-    <script src="" async defer></script>
+      function loadMap() {
+        mymap = L.map("mapid").setView([16.5289107, -3.7162595], 2);
+
+        L.tileLayer(
+          "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+          {
+            maxZoom: 18,
+            attribution:
+              'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+              '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+              'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            id: "mapbox/streets-v11",
+            tileSize: 512,
+            zoomOffset: -1,
+          }
+        ).addTo(mymap);
+
+        var popup = L.popup();
+      }
+
+      function addMarker(lat, long, title, city, body) {
+        L.marker([lat, long])
+          .addTo(mymap)
+          .bindPopup(`<b>${title}</b><br />City: ${city}<br/>${body}`);
+      }
+
+      //addMarker(16.77, -3.01, "Selling XMR", "call +3112408402 to arrange a meeting. Minimum quantity 2 XMR. Meeting anywhere in Timbuktu");
+
+      window.addEventListener("load", function () {
+        loadWeb3(async () => {
+          loadContract(() => {
+            loadMap();
+          });
+        });
+      });
+
+      function reloadMap() {
+          $("#mapContainer").empty();
+          var map = document.createElement("div");
+          map.id = "mapid";
+          var con = document.getElementById("mapContainer");
+          con.appendChild(map);
+          loadMap();
+      }
+
+      function showNumLoaded(cur, total, title) {
+        var a = document.getElementById("showNumLoaded");
+        a.innerText = `Loading ${title}. So far ${cur-1} of ${total-1} have loaded`;
+
+        if (document.getElementById("loadingBar") != null) {
+            document.getElementById("loadingBar").remove();
+        }
+
+        var loadingBar = document.createElement("div");
+        loadingBar.id = "loadingBar";
+        var inner = document.createElement("div");
+        inner.style.height = "24px";
+        inner.style.backgroundColor = "#ccc";
+
+        console.log(`${cur} ${total}percent loaded ${Math.floor((cur / total)*100)}`);
+        inner.style.width = `${Math.floor((cur / total)*100)}%`;
+        loadingBar.appendChild(inner);
+        a.appendChild(loadingBar);
+      }
+
+      function resultIsValid(result) {
+        if (result["latitude"] == "") {
+          return false;
+        }
+        if (result["longitude"] == "") {
+          return false;
+        }
+
+        return true;
+      }
+
+      function loadBuyers() {
+        if (coin2cashContract == undefined || userAccount == undefined) {
+          alert("Please wait for the contract to connect");
+        } else {
+            reloadMap();
+          coin2cashContract.methods
+            .numBuyers()
+            .call({ from: userAccount }, function (error, result) {
+              if (error) {
+                alert("Error loading the number of registered buyers");
+              } else {
+                var numBuyers = parseInt(result);
+                showNumLoaded(0, numBuyers, "Buyers");
+
+                for (var i = 0; i < numBuyers+1; i++) {
+                  //load the next buyer
+                  var start = i;
+                  coin2cashContract.methods
+                    .getBuyer(i)
+                    .call({ from: userAccount }, function (error, result) {
+
+                      showNumLoaded(i, numBuyers+1, "Buyers");
+                      if (error) {
+                        console.log("error");
+                      } else if (resultIsValid(result)) {
+                        console.log(result);
+                        console.log(parseFloat(result["latitude"]));
+                        addMarker(
+                          parseFloat(result["latitude"]),
+                          parseFloat(result["longitude"]),
+                          result["title"],
+                          result["cityName"],
+                          result["description"]
+                        );
+                      } else {
+                        console.log("invalid/incomplete buyer, skipping");
+                        console.log(result);
+                      }
+                    });
+                }
+              }
+            });
+        }
+      }
+      function loadSellers() {
+        if (coin2cashContract == undefined || userAccount == undefined) {
+          alert("Please wait for the contract to connect");
+        } else {
+            reloadMap();
+          coin2cashContract.methods
+            .numSellers()
+            .call({ from: userAccount }, function (error, result) {
+              if (error) {
+                alert("Error loading the number of registered sellers");
+              } else {
+                var numSellers = parseInt(result);
+                showNumLoaded(0, numSellers, "Sellers");
+
+                for (var i = 0; i < numSellers+1; i++) {
+                  //load the next buyer
+                  var start = i;
+                  coin2cashContract.methods
+                    .getSeller(i)
+                    .call({ from: userAccount }, function (error, result) {
+
+                      showNumLoaded(i, numSellers+1, "Sellers");
+                      if (error) {
+                        console.log("error");
+                      } else if (resultIsValid(result)) {
+                        console.log(result);
+                        console.log(parseFloat(result["latitude"]));
+                        addMarker(
+                          parseFloat(result["latitude"]),
+                          parseFloat(result["longitude"]),
+                          result["title"],
+                          result["cityName"],
+                          result["description"]
+                        );
+                      } else {
+                        console.log("invalid/incomplete seller, skipping");
+                        console.log(result);
+                      }
+                    });
+                }
+              }
+            });
+        }
+      }
+      
+    </script>
   </body>
 </html>

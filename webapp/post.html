@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Coin2Cash</title>
+
+    <meta
+      name="description"
+      content="Trade fiat and cryptocurrencies in person"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="index.css" />
+    <script type="text/javascript" src="libraries/web3.min.js"></script>
+
+    <script type="text/javascript" src="libraries/jquery.min.js"></script>
+    <script type="text/javascript" src="common.js"></script>
+  </head>
+  <body>
+    <h2>
+      Coin2Ca<span style="font-size: small">.</span>sh <br />
+      <i style="font-size: xx-small; opacity: 0.7; margin-left: 0.3%"
+        >The Web App</i
+      >
+    </h2>
+    <div id="contents" style="display: none">
+      <p style="color: slategray; font-size: small">
+        Hint: The gas price is based on the amount of data in your post. So if
+        it's to expensive, shorten your post.
+      </p>
+      <form id="postForm">
+        <label>Title</label><br />
+        <input
+          type="text"
+          name="title"
+          id="title"
+          placeholder="Title for your post"
+          maxlength="256"
+          required
+        />
+        <br />
+        <label>Description</label><br />
+        <input
+          type="text"
+          name="description"
+          id="description"
+          placeholder="How to contact you"
+          maxlength="256"
+          required
+        />
+        <br />
+        <label>City Name</label><br />
+        <input
+          type="text"
+          name="city"
+          id="city"
+          placeholder="Help people find you"
+          maxlength="256"
+          required
+        />
+        <br />
+        <input
+          type="radio"
+          id="seller"
+          value="seller"
+          name="postType"
+          required
+        />
+        <label for="seller">Seller</label><br />
+        <input type="radio" id="buyer" value="buyer" name="postType" required />
+        <label for="buyer">Buyer</label><br />
+        <input type="radio" id="both" value="both" name="postType" required />
+        <label for="both">Both</label>
+        <br />
+        <input type="submit" value="Post" />
+      </form>
+    </div>
+
+    <div id="loading">Loading...</div>
+
+    <script type="text/javascript">
+      function showTransaction() {}
+
+      function handlePostResult(err, tx) {
+        if (err != null) {
+          alert("an error occured. your post could not be uploaded");
+          console.log(err);
+          criticalError(err);
+        } else {
+          var res = document.createElement("div");
+          res.classList.add("alertMSG");
+          res.innerHTML = `
+          Your post has been sent to the blockchain.🎉 You can see the transaction <a href="https://etherscan.io/tx/${tx}">here</a>. To view it on Coin2Ca.sh visit the <a href="https://coin2ca.sh/index.html">find page</a>.`;
+          $("#contents").prepend(res);
+        }
+      }
+      function handleSellerPost(title, description, city) {
+        try {
+          coin2cashContract.methods
+            .addSeller(
+              `${coords.latitude}`,
+              `${coords.longitude}`,
+              description,
+              city,
+              title,
+              0
+            )
+            .send({ from: userAccount }, handlePostResult);
+        } catch (e) {
+          console.log(e);
+          alert("error posting your post");
+        }
+      }
+
+      function handleBuyerPost(title, description, city) {
+        try {
+          coin2cashContract.methods
+            .addBuyer(97, 12, description, title, city, 0)
+            .send({ from: userAccount }, handlePostResult);
+        } catch (e) {
+          console.log(e);
+          alert("error posting your post");
+        }
+      }
+
+      window.addEventListener("load", function () {
+        loadWeb3(async () => {
+          loadContract(() => {
+            getLocation(handleLocation);
+            document.getElementById("contents").style.display = "block";
+            document.getElementById("loading").style.display = "none";
+          });
+        });
+        document.getElementById("postForm").onsubmit = (e) => {
+          e.preventDefault();
+          console.log(e);
+
+          if (coords == undefined) {
+            criticalError("Unable to determine geolocation", 1);
+          } else {
+            var title = document.getElementById("title").value;
+            var description = document.getElementById("description").value;
+            var city = document.getElementById("city").value;
+            if (document.getElementById("both").checked) {
+              handleSellerPost(title, description, city);
+              handleBuyerPost(title, description, city);
+            } else if (document.getElementById("seller").checked) {
+              //seller post
+              handleSellerPost(title, description, city);
+            } else {
+              //buyer post
+              handleBuyerPost(title, description, city);
+            }
+          }
+        };
+        handlePostResult(
+          null,
+          "0x72173130b5cb8b0555d99b3c0b035e5fedafc9744101dc30b40e812d78256908"
+        );
+      });
+    </script>
+    <!--[if lt IE 7]>
+      <p class="browsehappy">
+        You are using an <strong>outdated</strong> browser. Please
+        <a href="#">upgrade your browser</a> to improve your experience.
+      </p>
+    <![endif]-->
+  </body>
+</html>

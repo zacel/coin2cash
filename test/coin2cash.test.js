@@ -66,7 +66,7 @@ describe('Coin2Cash', function () {
         console.log(res);
         for (var i = 1; i <= res; i++) {
             var seller = await this.coin2cash.getSeller(i);
-            console.log(seller['latitude']);
+            console.log(seller);
             expect(seller['latitude']).to.equal('42.1234565');
         }
     });
